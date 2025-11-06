@@ -194,7 +194,7 @@
   </div>
 
 <script>
-/* ========= Storage seguro ========= */
+/* ========= Storage ========= */
 function safeParse(key, fallback){
   try{ const v = localStorage.getItem(key); return v? JSON.parse(v) : fallback; }
   catch(e){ console.warn('Storage corrompido em', key, e); return fallback; }
@@ -315,7 +315,7 @@ function atualizarUI(){
   renderUsuarios();
   renderRequisicoes();
 
-  // auto-preencher solicitante
+  // auto-preencher solicitante (somente técnico)
   const reqInput = document.getElementById('reqSolicitante');
   if(reqInput){
     if(currentUser && currentUser.role === 'Técnico'){
@@ -504,49 +504,55 @@ function onProdutoChange(){
 
 function criarRequisicao(){
   if(!currentUser || currentUser.role !== 'Técnico'){ alert('Apenas Técnicos podem criar requisições.'); return; }
+
   const solicitanteName = currentUser.name && currentUser.name.trim() ? currentUser.name : currentUser.username;
   const solicitanteUser = currentUser.username;
+
   const prodIndex = Number(document.getElementById('selProduto').value);
   if(isNaN(prodIndex)){ alert('Selecione um produto'); return; }
+
   const qtd = Number(document.getElementById('reqQtd').value || 1);
   const marca = (document.getElementById('reqMarca').value || '').trim();
   const modelo = (document.getElementById('reqModelo').value || '').trim();
+
   const mat = materiais[prodIndex];
   if(!mat){ alert('Produto inválido'); return; }
   if(qtd <= 0){ alert('Quantidade inválida'); return; }
 
-  // controle de estoque (baixa)
+  // baixa de estoque
   if(qtd > mat.qtd){
-    if(!confirm(`Quantidade solicitada (${qtd}) maior que disponível (${mat.qtd}). Continuar mesmo assim? O estoque ficará zerado.`))
+    if(!confirm(`Quantidade solicitada (${qtd}) é maior que disponível (${mat.qtd}). Continuar? O estoque ficará zerado.`))
       return;
     mat.qtd = 0;
   } else {
     mat.qtd = mat.qtd - qtd;
   }
 
-  const r = {
+  // registra requisição com solicitante
+  requisicoes.unshift({
     id: 'REQ-'+Date.now(),
     produtoId: mat.id,
     produtoNome: mat.nome,
-    marca: marca || mat.marca || null,
-    modelo: modelo || mat.modelo || null,
+    marca: marca || mat.marca || '',
+    modelo: modelo || mat.modelo || '',
     qtd,
     solicitanteUser,
     solicitanteName,
     status: 'Enviado',
     criadoEm: new Date().toISOString()
-  };
-  requisicoes.unshift(r);
+  });
 
   saveAll();
   alert('Requisição enviada. Estoque atualizado.');
 
-  // alerta se atingiu mínimo
   if(mat.min !== undefined && mat.qtd <= mat.min){
-    alert(`Atenção: o item "${mat.nome}" atingiu o estoque mínimo (mín: ${mat.min}). Qtd atual: ${mat.qtd}.`);
+    alert(`⚠️ Atenção: o item "${mat.nome}" atingiu o estoque mínimo (mín: ${mat.min}). Qtd atual: ${mat.qtd}.`);
   }
 
+  renderMateriais();
+  renderMateriaisForTech();
   renderRequisicoes();
+
   document.getElementById('reqMarca').value = '';
   document.getElementById('reqModelo').value = '';
   document.getElementById('reqQtd').value = 1;
