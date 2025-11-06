@@ -106,6 +106,17 @@
           <div style="flex:1;min-width:160px" class="card"><div class="muted">Requisições</div><div style="font-size:20px;font-weight:700" id="countReqs">0</div></div>
           <div style="flex:1;min-width:160px" class="card"><div class="muted">Usuários</div><div style="font-size:20px;font-weight:700" id="countUsers">0</div></div>
         </div>
+
+        <!-- BACKUP / RESTAURAR -->
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="exportBackup()">Backup (.json)</button>
+
+          <label class="btn ghost" style="cursor:pointer">
+            Restaurar (.json)
+            <input type="file" id="restoreFile" accept="application/json"
+                   onchange="importBackup(event)" style="display:none">
+          </label>
+        </div>
       </section>
 
       <!-- REQUISIÇÕES -->
@@ -510,6 +521,42 @@ function renderRequisicoes(){
   });
 }
 
+/* ========= Backup / Restaurar ========= */
+function exportBackup(){
+  const data = { users, materiais, requisicoes };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'sistema_estoque_backup.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  alert('Backup gerado! Leve esse arquivo para o outro navegador e use “Restaurar (.json)”.');
+}
+
+function importBackup(evt){
+  const file = evt.target.files[0];
+  if(!file){ return; }
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      if(!data || typeof data !== 'object'){ throw new Error('Arquivo inválido'); }
+      // valida e carrega
+      users = Array.isArray(data.users) ? data.users : [];
+      materiais = Array.isArray(data.materiais) ? data.materiais : [];
+      requisicoes = Array.isArray(data.requisicoes) ? data.requisicoes : [];
+      currentUser = null; // força novo login
+      saveAll();
+      alert('Dados restaurados com sucesso! Faça login novamente.');
+      location.reload();
+    }catch(e){
+      alert('Falha ao importar: ' + e.message);
+    }
+  };
+  reader.onerror = () => alert('Erro ao ler o arquivo.');
+  reader.readAsText(file);
+}
+
 /* ========= util ========= */
 function hardReset(){
   try{
@@ -550,6 +597,8 @@ window.alterarRole = alterarRole;
 window.deletarUsuario = deletarUsuario;
 window.criarRequisicao = criarRequisicao;
 window.onProdutoChange = onProdutoChange;
+window.exportBackup = exportBackup;
+window.importBackup = importBackup;
 </script>
 </body>
 </html>
