@@ -74,9 +74,15 @@
     </div>
   </div>
 
-  <!-- HEADER -->
+  <!-- HEADER (sem logo) -->
   <header id="appHeader" style="display:none">
-    <div><h1>Sistema de Estoque</h1></div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <div>
+        <h1>Sistema de Estoque</h1>
+        <div class="muted" style="font-size:13px;color:rgba(255,255,255,0.85)">Controle de requisições e estoque</div>
+      </div>
+    </div>
+
     <div style="display:flex;gap:12px;align-items:center">
       <div class="user-info" id="userInfo">Usuário: —</div>
       <button class="btn" id="btnLogout" onclick="logout()" style="display:none">Sair</button>
