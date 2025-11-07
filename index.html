@@ -225,6 +225,20 @@ function ensureDefaultUsers(){
 }
 function countAdmins(){ return users.filter(u=>u.role==='Administrador').length; }
 
+/* ========= Correção de legado ========= */
+function fixLegacyRequisicoes(){
+  let changed = false;
+  requisicoes.forEach(r=>{
+    if(!r.solicitanteName){
+      const u = users.find(x=> x.username === r.solicitanteUser);
+      if(u && u.name){ r.solicitanteName = u.name; changed = true; }
+      else if(r.solicitanteUser){ r.solicitanteName = r.solicitanteUser; changed = true; }
+    }
+    if(!r.status){ r.status = 'Enviado'; changed = true; }
+  });
+  if(changed) saveAll();
+}
+
 /* ========= Auth ========= */
 function login(){
   const uEl = document.getElementById('loginUser');
@@ -564,7 +578,7 @@ function renderRequisicoes(){
   requisicoes.forEach((r)=>{
     if(currentUser && currentUser.role === 'Técnico' && r.solicitanteUser !== currentUser.username) return;
     tb.innerHTML += `<tr>
-      <td>${r.id}</td><td>${r.produtoNome}</td><td>${r.marca || '—'}</td><td>${r.modelo || '—'}</td><td>${r.qtd}</td><td>${r.solicitanteName}</td><td>${r.status}</td>
+      <td>${r.id}</td><td>${r.produtoNome}</td><td>${r.marca || '—'}</td><td>${r.modelo || '—'}</td><td>${r.qtd}</td><td>${r.solicitanteName || r.solicitanteUser || '—'}</td><td>${r.status}</td>
     </tr>`;
   });
 }
@@ -585,6 +599,7 @@ window.hardReset = hardReset;
 
 /* ========= Inicialização ========= */
 ensureDefaultUsers();
+fixLegacyRequisicoes();  // completa nome do solicitante em registros antigos
 if(!currentUser){
   document.getElementById('loginOverlay').style.display = '';
   document.getElementById('appHeader').style.display = 'none';
